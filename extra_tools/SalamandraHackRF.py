@@ -22,12 +22,13 @@ def run_sweep(freq_min, freq_max, sample_rate=20000000, bin_width=1000000):
     Runs hackrf_sweep and returns the output as a list of lines.
     freq_min, freq_max in Hz.
     """
-    # hackrf_sweep output format:
-    # date, time, hz_low, hz_high, hz_bin_width, num_samples, dbm1, dbm2, ...
-    
+    # hackrf_sweep takes frequencies in MHz
+    freq_min_mhz = int(freq_min / 1000000)
+    freq_max_mhz = int(freq_max / 1000000)
+
     cmd = [
         "hackrf_sweep",
-        "-f", f"{freq_min}:{freq_max}",
+        "-f", f"{freq_min_mhz}:{freq_max_mhz}",
         "-w", str(bin_width),
         "-1" # Single sweep
     ]
