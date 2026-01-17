@@ -10,7 +10,7 @@
 *   **Spy Bug Detector (`--salamandra`)**: Scan for hidden analog microphones.
 *   **Drone Detector (`--drone`)**: Monitor airspace for UAV communication signals.
 *   **Signal Decoder (`--rtl433`)**: Decode common ISM band devices (Weather stations, TPMS, etc.) using `rtl_433` integration.
-*   **Web UI (`--webui`)**: A modern "Cyberpunk" style web interface to control the tool.
+*   **Web UI (`--webui`)**: A responsive, touch-friendly web interface inspired by the **Evil Crow RF V2** design. Features dark mode, card-based navigation, and a dedicated terminal output window.
 
 ## Prerequisites
 

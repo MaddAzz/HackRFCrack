@@ -3,196 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HackRF // CRACK // CONTROL</title>
+    <title>HackRF // PANEL</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0a0a0a;
-            --panel-bg: #111;
-            --text-color: #00ff41;
-            --accent-color: #00ff41;
-            --border-color: #333;
-            --font-mono: 'Courier New', monospace;
-        }
-        
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-mono);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-dim: #a0a0a0;
+            --accent: #00e676; /* Hacker Green */
+            --danger: #ff5252;
+            --border: #333;
+            --radius: 8px;
         }
 
-        header {
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        nav {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
-        
-        .container {
+        .brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: var(--accent);
+            text-transform: uppercase;
             display: flex;
-            flex: 1;
-            gap: 20px;
+            align-items: center;
+            gap: 10px;
         }
 
-        .controls {
-            width: 300px;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
+        .status {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--accent);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
             padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Frequency Input */
+        .freq-panel {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        .freq-label {
+            font-weight: bold;
+            margin-right: 15px;
+            color: var(--text-dim);
+        }
+
+        .freq-input {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            flex: 1;
+            font-weight: bold;
+            outline: none;
+        }
+
+        /* Module Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .console {
-            flex: 1;
-            background: #000;
-            border: 1px solid var(--accent-color);
-            padding: 15px;
-            overflow-y: auto;
-            white-space: pre-wrap;
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        .card i {
+            font-size: 2rem;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        .card.active {
+            border-color: var(--accent);
+            background-color: rgba(0, 230, 118, 0.05);
+        }
+
+        .card.active i {
+            color: var(--accent);
+        }
+
+        .card-title {
+            font-weight: 600;
             font-size: 0.9rem;
-            color: #ddd;
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
         }
 
-        .control-group {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            position: relative;
-            margin-top: 10px;
+        /* Terminal */
+        .terminal-container {
+            background-color: #000;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 300px;
         }
 
-        .control-group::before {
-            content: attr(data-label);
-            position: absolute;
-            top: -10px;
-            left: 10px;
-            background: var(--panel-bg);
-            padding: 0 5px;
+        .terminal-header {
+            background-color: #222;
+            padding: 8px 15px;
             font-size: 0.8rem;
             color: #888;
-        }
-
-        input[type="number"] {
-            background: #222;
-            border: 1px solid var(--border-color);
-            color: #fff;
-            padding: 5px;
-            width: 100%;
-            margin-bottom: 10px;
-            font-family: var(--font-mono);
-        }
-
-        button {
-            background: transparent;
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-            padding: 8px 15px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-weight: bold;
-            font-family: var(--font-mono);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        button:hover {
-            background: var(--accent-color);
-            color: #000;
-        }
-
-        button.stop {
-            border-color: #ff3333;
-            color: #ff3333;
-        }
-
-        button.stop:hover {
-            background: #ff3333;
-            color: #fff;
-        }
-
-        .status-bar {
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: #666;
+            border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
         }
 
-        /* Glitch effect for title */
-        @keyframes glitch {
-            0% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
-            20% { text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; }
-            40% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
-            100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
+        .terminal-output {
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #ddd;
+            overflow-y: auto;
+            flex: 1;
+            white-space: pre-wrap;
         }
-        h1:hover {
-            animation: glitch 0.5s infinite;
+
+        .stop-btn {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: var(--radius);
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .stop-btn:active {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>HackRF // Crack // UI</h1>
-    <div id="connection-status">CONNECTED</div>
-</header>
+<nav>
+    <div class="brand">
+        <i class="fas fa-microchip"></i> HackRF
+    </div>
+    <div class="status">
+        <div class="status-dot"></div> ONLINE
+    </div>
+</nav>
 
-<div class="container">
-    <div class="controls">
-        <div class="control-group" data-label="Global Config">
-            <label>Frequency (Hz)</label>
-            <input type="number" id="freq" value="315000000">
-        </div>
-
-        <div class="control-group" data-label="Attacks">
-            <button onclick="startTool('jammer')">Start Jammer</button>
-            <div style="height: 5px;"></div>
-            <button onclick="startTool('replay')">Instant Replay</button>
-        </div>
-
-        <div class="control-group" data-label="Surveillance">
-            <button onclick="startTool('salamandra')">Salamandra (Spy Bug)</button>
-            <div style="height: 5px;"></div>
-            <button onclick="startTool('drone')">Drone Detect</button>
-        </div>
-        
-        <div class="control-group" data-label="Decoding">
-            <button onclick="startTool('rtl433')">RTL_433 Decoder</button>
-        </div>
-
-        <button class="stop" onclick="stopTool()">STOP ALL</button>
+<main>
+    <div class="freq-panel">
+        <span class="freq-label">FREQ (Hz):</span>
+        <input type="number" class="freq-input" id="freq" value="315000000">
     </div>
 
-    <div class="console" id="console-output">
-        [SYSTEM READY]
-        Waiting for command...
-    </div>
-</div>
+    <button class="stop-btn" onclick="stopTool()">
+        <i class="fas fa-stop-circle"></i> STOP ALL OPERATIONS
+    </button>
 
-<div class="status-bar">
-    <span>Device: HackRF One</span>
-    <span>v2.0 Web Interface</span>
-</div>
+    <div class="grid">
+        <div class="card" onclick="startTool('jammer')">
+            <i class="fas fa-broadcast-tower"></i>
+            <span class="card-title">JAMMER</span>
+        </div>
+        <div class="card" onclick="startTool('replay')">
+            <i class="fas fa-redo"></i>
+            <span class="card-title">REPLAY</span>
+        </div>
+        <div class="card" onclick="startTool('salamandra')">
+            <i class="fas fa-bug"></i>
+            <span class="card-title">SALAMANDRA</span>
+        </div>
+        <div class="card" onclick="startTool('drone')">
+            <i class="fas fa-plane-arrival"></i>
+            <span class="card-title">DRONE DETECT</span>
+        </div>
+        <div class="card" onclick="startTool('rtl433')">
+            <i class="fas fa-satellite-dish"></i>
+            <span class="card-title">RTL_433</span>
+        </div>
+        <div class="card" onclick="toggleLogs()">
+            <i class="fas fa-terminal"></i>
+            <span class="card-title">TOGGLE LOGS</span>
+        </div>
+    </div>
+
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <span>TERMINAL OUTPUT</span>
+            <span id="term-status">IDLE</span>
+        </div>
+        <div class="terminal-output" id="console-output">
+            > System Ready.
+            > Waiting for command...
+        </div>
+    </div>
+</main>
 
 <script>
     const consoleDiv = document.getElementById('console-output');
+    const termStatus = document.getElementById('term-status');
     let pollInterval = null;
 
     async function startTool(toolName) {
         const freq = document.getElementById('freq').value;
         
-        consoleDiv.innerHTML += `\n[COMMAND] Launching ${toolName}...\n`;
+        log(`[CMD] Launching ${toolName}...`);
+        highlightCard(toolName);
         
         try {
             const res = await fetch('/api/start', {
@@ -201,22 +293,27 @@
                 body: JSON.stringify({ tool: toolName, freq: freq })
             });
             const data = await res.json();
-            consoleDiv.innerHTML += `[STATUS] ${data.status}\n`;
+            log(`[SYS] ${data.status}`);
             
             if (data.status === "Started") {
                 startPolling();
+                termStatus.innerText = "RUNNING";
+                termStatus.style.color = "#00e676";
             }
         } catch (e) {
-            consoleDiv.innerHTML += `[ERROR] Connection failed\n`;
+            log(`[ERR] Connection failed`);
         }
     }
 
     async function stopTool() {
         try {
             await fetch('/api/stop', { method: 'POST' });
-            consoleDiv.innerHTML += `\n[COMMAND] Stop Signal Sent.\n`;
+            log(`[CMD] STOP Signal Sent.`);
+            termStatus.innerText = "STOPPED";
+            termStatus.style.color = "#ff5252";
+            clearHighlights();
         } catch (e) {
-            consoleDiv.innerHTML += `[ERROR] Failed to stop\n`;
+            log(`[ERR] Failed to stop`);
         }
     }
 
@@ -230,15 +327,27 @@
             const res = await fetch('/api/logs');
             const data = await res.json();
             if (data.logs) {
-                // Clear and update or append? 
-                // For simple implementation, replace content or implement smarter append logic.
-                // Current backend returns last 50 lines.
                 consoleDiv.innerText = data.logs;
                 consoleDiv.scrollTop = consoleDiv.scrollHeight;
             }
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) { }
+    }
+
+    function log(msg) {
+        consoleDiv.innerText += `\n${msg}`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    function highlightCard(toolName) {
+        // Simple visual feedback implementation could go here if we added IDs to cards
+    }
+
+    function clearHighlights() {
+        // Remove active class
+    }
+
+    function toggleLogs() {
+        // Implementation to maybe collapse terminal, current placeholder
     }
 </script>
 
