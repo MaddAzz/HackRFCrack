@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackRF // CRACK // CONTROL</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-bg: #111;
+            --text-color: #00ff41;
+            --accent-color: #00ff41;
+            --border-color: #333;
+            --font-mono: 'Courier New', monospace;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-mono);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+        }
+
+        .controls {
+            width: 300px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .console {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--accent-color);
+            padding: 15px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            color: #ddd;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .control-group {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .control-group::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: var(--panel-bg);
+            padding: 0 5px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        input[type="number"] {
+            background: #222;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+            font-family: var(--font-mono);
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 8px 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        button.stop {
+            border-color: #ff3333;
+            color: #ff3333;
+        }
+
+        button.stop:hover {
+            background: #ff3333;
+            color: #fff;
+        }
+
+        .status-bar {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Glitch effect for title */
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
+            20% { text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; }
+            40% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
+            100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; }
+        }
+        h1:hover {
+            animation: glitch 0.5s infinite;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>HackRF // Crack // UI</h1>
+    <div id="connection-status">CONNECTED</div>
+</header>
+
+<div class="container">
+    <div class="controls">
+        <div class="control-group" data-label="Global Config">
+            <label>Frequency (Hz)</label>
+            <input type="number" id="freq" value="315000000">
+        </div>
+
+        <div class="control-group" data-label="Attacks">
+            <button onclick="startTool('jammer')">Start Jammer</button>
+            <div style="height: 5px;"></div>
+            <button onclick="startTool('replay')">Instant Replay</button>
+        </div>
+
+        <div class="control-group" data-label="Surveillance">
+            <button onclick="startTool('salamandra')">Salamandra (Spy Bug)</button>
+            <div style="height: 5px;"></div>
+            <button onclick="startTool('drone')">Drone Detect</button>
+        </div>
+        
+        <div class="control-group" data-label="Decoding">
+            <button onclick="startTool('rtl433')">RTL_433 Decoder</button>
+        </div>
+
+        <button class="stop" onclick="stopTool()">STOP ALL</button>
+    </div>
+
+    <div class="console" id="console-output">
+        [SYSTEM READY]
+        Waiting for command...
+    </div>
+</div>
+
+<div class="status-bar">
+    <span>Device: HackRF One</span>
+    <span>v2.0 Web Interface</span>
+</div>
+
+<script>
+    const consoleDiv = document.getElementById('console-output');
+    let pollInterval = null;
+
+    async function startTool(toolName) {
+        const freq = document.getElementById('freq').value;
+        
+        consoleDiv.innerHTML += `\n[COMMAND] Launching ${toolName}...\n`;
+        
+        try {
+            const res = await fetch('/api/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ tool: toolName, freq: freq })
+            });
+            const data = await res.json();
+            consoleDiv.innerHTML += `[STATUS] ${data.status}\n`;
+            
+            if (data.status === "Started") {
+                startPolling();
+            }
+        } catch (e) {
+            consoleDiv.innerHTML += `[ERROR] Connection failed\n`;
+        }
+    }
+
+    async function stopTool() {
+        try {
+            await fetch('/api/stop', { method: 'POST' });
+            consoleDiv.innerHTML += `\n[COMMAND] Stop Signal Sent.\n`;
+        } catch (e) {
+            consoleDiv.innerHTML += `[ERROR] Failed to stop\n`;
+        }
+    }
+
+    function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(fetchLogs, 1000);
+    }
+
+    async function fetchLogs() {
+        try {
+            const res = await fetch('/api/logs');
+            const data = await res.json();
+            if (data.logs) {
+                // Clear and update or append? 
+                // For simple implementation, replace content or implement smarter append logic.
+                // Current backend returns last 50 lines.
+                consoleDiv.innerText = data.logs;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+</script>
+
+</body>
+</html>

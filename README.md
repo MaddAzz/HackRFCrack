@@ -4,67 +4,68 @@
 
 ## Features
 
-*   **Replay Attack (`-i`)**: Capture a signal and immediately replay it. Ideal for testing RF-controlled devices like doorbells, gates, and simple remotes.
-*   **Jamming (`-j`)**: Transmit wideband noise on a specific frequency to block communications.
-*   **Signal Analysis (`-a`)**: Analyze captured IQ data to demodulate OOK (On-Off Keying) signals, visualize the waveform, and extract binary/hex data.
-    *   *Includes automatic graph generation!*
+*   **Replay Attack (`-i`)**: Capture a signal and immediately replay it. Ideal for testing RF-controlled devices.
+*   **Jamming (`-j`)**: Transmit wideband noise on a specific frequency.
+*   **Signal Analysis (`-a`)**: Demodulate OOK signals, visualize the waveform, and extract binary/hex data.
+*   **Spy Bug Detector (`--salamandra`)**: Scan for hidden analog microphones.
+*   **Drone Detector (`--drone`)**: Monitor airspace for UAV communication signals.
+*   **Signal Decoder (`--rtl433`)**: Decode common ISM band devices (Weather stations, TPMS, etc.) using `rtl_433` integration.
+*   **Web UI (`--webui`)**: A modern "Cyberpunk" style web interface to control the tool.
 
 ## Prerequisites
 
 *   **Hardware**: HackRF One
 *   **Software**:
-    *   `hackrf` (host tools: `hackrf_transfer`, `hackrf_info`)
+    *   `hackrf` (host tools)
+    *   `rtl_433` (for decoding support)
     *   Python 3
-    *   `numpy`
-    *   `scipy`
-    *   `matplotlib` (for graphing)
+    *   `numpy`, `scipy`, `matplotlib`, `flask`
 
 ### Installation
 
 ```bash
-# Install HackRF tools (Debian/Kali/Ubuntu)
+# Install system tools
 sudo apt update
-sudo apt install hackrf
+sudo apt install hackrf rtl-433
 
 # Install Python dependencies
-pip3 install numpy scipy matplotlib
+pip3 install numpy scipy matplotlib flask
 ```
 
 ## Usage
 
-Run the tool using Python 3:
+### CLI Mode
 
 ```bash
 python3 HackRFCrack.py [OPTIONS]
 ```
 
-### 1. Instant Replay Attack
-Capture a signal and replay it on demand.
-
+**Examples:**
 ```bash
-# Capture on 315 MHz
+# Replay Attack on 315 MHz
 python3 HackRFCrack.py -i -F 315000000
-```
-*   Press `Ctrl+C` to stop capturing.
-*   The tool will ask if you want to Replay (`y`) or Analyze (`a`) the capture.
 
-### 2. Signal Analysis
-Demodulate and analyze an existing IQ capture file.
+# Jam 433 MHz
+python3 HackRFCrack.py -j -F 433000000
+
+# Scan for Spy Bugs
+python3 HackRFCrack.py --salamandra
+
+# Detect Drones
+python3 HackRFCrack.py --drone
+
+# Decode Signals using rtl_433
+python3 HackRFCrack.py --rtl433 -F 433920000
+```
+
+### Web UI Mode
+
+Launch the web interface:
 
 ```bash
-# Analyze a file with 2000 baud rate (default)
-python3 HackRFCrack.py -a capture.iq -B 2000
+python3 HackRFCrack.py --webui
 ```
-*   Generates a PNG plot showing the raw envelope, filtered signal, and demodulated bits.
-*   Prints the decoded binary and hex data to the console.
-
-### 3. Jamming
-Block signals on a specific frequency.
-
-```bash
-# Jam 433.92 MHz
-python3 HackRFCrack.py -j -F 433920000
-```
+Then open your browser at **http://localhost:5000**.
 
 ## Options
 
@@ -72,10 +73,13 @@ python3 HackRFCrack.py -j -F 433920000
 | :--- | :--- | :--- |
 | `-i`, `--instant_replay` | Record and Replay Signal | |
 | `-j`, `--jammer` | Jam a frequency | |
-| `-a FILE`, `--analyze FILE` | Analyze an existing capture file | |
-| `-F FREQ`, `--frequency FREQ` | Frequency in Hz | `315000000` |
-| `-S RATE`, `--sample_rate RATE` | Sample Rate | `2000000` |
-| `-B RATE`, `--baud_rate RATE` | Baud/Bit Rate for analysis | `2000` |
+| `-a FILE` | Analyze capture file | |
+| `--salamandra` | Launch Salamandra Spy Bug Detector | |
+| `--drone` | Launch Drone Detector | |
+| `--rtl433` | Launch rtl_433 Decoder | |
+| `--webui` | Launch Web Interface | |
+| `-F FREQ` | Frequency in Hz | `315000000` |
+| `-S RATE` | Sample Rate | `2000000` |
 
 ## Disclaimer
 This tool is for educational and authorized testing purposes only. Users are responsible for complying with local radio frequency regulations.

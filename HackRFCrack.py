@@ -15,8 +15,8 @@ try:
 except ImportError:
     PLOT_AVAILABLE = False
 
-# ASCII Art
-print(r'''
+def print_banner():
+    print(r'''
     RFCrack - HackRF Edition
     ========================
 ''')
@@ -31,7 +31,7 @@ def run_command(command):
 
 def signal_handler(sig, frame):
     print('\nExiting...')
-    sys.exit(0)
+    # sys.exit(0) # Let the caller handle exit if needed, or just exit.
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -208,53 +208,95 @@ def jammer(freq, sample_rate=2000000):
         p.terminate()
         print("\n[*] Jamming stopped.")
 
-def scanner(freq_list=None):
-    if not freq_list:
-        print("[-] No frequency list provided.")
-        return
+def run_rtl433(freq, sample_rate):
+    """
+    Runs rtl_433 with HackRF support.
+    """
+    print(f"[*] Launching rtl_433 on {freq/1000000} MHz...")
+    
+    # Try using SoapySDR/HackRF driver support in rtl_433
+    # Command: rtl_433 -d driver=hackrf -f <freq> -s <sample_rate>
+    # Note: rtl_433 default sample rate is 250k, HackRF usually likes 2M+ but supports lower.
+    # We'll use the user provided sample rate, but rtl_433 might act up if it's too high/low.
+    # Typically 2M is fine for HackRF.
+    
+    cmd = [
+        "rtl_433",
+        "-d", "driver=hackrf",
+        "-f", str(freq),
+        "-s", str(sample_rate)
+    ]
+    
+    try:
+        subprocess.run(cmd)
+    except FileNotFoundError:
+        print("[-] Error: rtl_433 not found. Please install it (apt install rtl-433).")
+    except KeyboardInterrupt:
+        print("\n[*] Stopping rtl_433...")
 
-    print("[*] Scanning not fully implemented in this wrapper (Requires parsing hackrf_sweep).")
-    print("[*] Recommended: Use 'hackrf_sweep' directly.")
-
-
-# --- Argument Parsing ---
-parser = argparse.ArgumentParser(description="HackRF port of RFCrack functionality")
-
-parser.add_argument("-i", "--instant_replay", action='store_true', help="Record and Replay Signal")
-parser.add_argument("-j", "--jammer", action='store_true', help="Jam a frequency")
-parser.add_argument("-a", "--analyze", type=str, metavar="FILE", help="Analyze an existing capture file (OOK Demod)")
-parser.add_argument("-F", "--frequency", type=int, default=315000000, help="Frequency in Hz (default: 315000000)")
-parser.add_argument("-S", "--sample_rate", type=int, default=2000000, help="Sample Rate (default: 2M)")
-parser.add_argument("-B", "--baud_rate", type=int, default=2000, help="Baud/Bit Rate for analysis (default: 2000)")
-parser.add_argument("--salamandra", action='store_true', help="Launch Salamandra Spy Bug Detector")
-parser.add_argument("--drone", action='store_true', help="Launch Drone Detector")
-
-# Ignored/Unsupported args from original (kept for compatibility if user copies command)
-parser.add_argument("-r", "--rolling_code", action='store_true', help="[NOT SUPPORTED] Rolling Code")
-parser.add_argument("-M", "--modulation_type", help="[NOT SUPPORTED] Modulation Type")
-
-args = parser.parse_args()
-
-if args.salamandra:
+def launch_salamandra():
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extra_tools/SalamandraHackRF.py")
     subprocess.run([sys.executable, script_path, "-m"])
-    sys.exit(0)
 
-if args.drone:
+def launch_drone():
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extra_tools/DroneDetectHackRF.py")
     subprocess.run([sys.executable, script_path])
-    sys.exit(0)
 
-if args.rolling_code:
-    print("[-] Rolling Code attacks require signal demodulation which is not supported in this raw HackRF wrapper.")
-    print("[-] This tool operates at the Physical Layer (Raw IQ).")
-    sys.exit(1)
+def main():
+    print_banner()
+    
+    parser = argparse.ArgumentParser(description="HackRF port of RFCrack functionality")
 
-if args.instant_replay:
-    replay_attack(args.frequency, args.sample_rate)
-elif args.jammer:
-    jammer(args.frequency, args.sample_rate)
-elif args.analyze:
-    analyze_signal(args.analyze, args.sample_rate, args.baud_rate)
-else:
-    parser.print_help()
+    parser.add_argument("-i", "--instant_replay", action='store_true', help="Record and Replay Signal")
+    parser.add_argument("-j", "--jammer", action='store_true', help="Jam a frequency")
+    parser.add_argument("-a", "--analyze", type=str, metavar="FILE", help="Analyze an existing capture file (OOK Demod)")
+    parser.add_argument("-F", "--frequency", type=int, default=315000000, help="Frequency in Hz (default: 315000000)")
+    parser.add_argument("-S", "--sample_rate", type=int, default=2000000, help="Sample Rate (default: 2M)")
+    parser.add_argument("-B", "--baud_rate", type=int, default=2000, help="Baud/Bit Rate for analysis (default: 2000)")
+    parser.add_argument("--salamandra", action='store_true', help="Launch Salamandra Spy Bug Detector")
+    parser.add_argument("--drone", action='store_true', help="Launch Drone Detector")
+    parser.add_argument("--rtl433", action='store_true', help="Launch rtl_433 (Signal Decoder)")
+    parser.add_argument("--webui", action='store_true', help="Launch Web UI Interface")
+
+    # Ignored/Unsupported args
+    parser.add_argument("-r", "--rolling_code", action='store_true', help="[NOT SUPPORTED] Rolling Code")
+    parser.add_argument("-M", "--modulation_type", help="[NOT SUPPORTED] Modulation Type")
+
+    args = parser.parse_args()
+
+    if args.salamandra:
+        launch_salamandra()
+        sys.exit(0)
+
+    if args.drone:
+        launch_drone()
+        sys.exit(0)
+
+    if args.rtl433:
+        run_rtl433(args.frequency, args.sample_rate)
+        sys.exit(0)
+
+    if args.rolling_code:
+        print("[-] Rolling Code attacks require signal demodulation which is not supported in this raw HackRF wrapper.")
+        print("[-] This tool operates at the Physical Layer (Raw IQ).")
+        sys.exit(1)
+
+    if args.instant_replay:
+        replay_attack(args.frequency, args.sample_rate)
+    elif args.jammer:
+        jammer(args.frequency, args.sample_rate)
+    elif args.analyze:
+        analyze_signal(args.analyze, args.sample_rate, args.baud_rate)
+    elif args.webui:
+        # We will implement this next
+        print("[*] Starting Web UI...")
+        try:
+            import web_ui
+            web_ui.start_server()
+        except ImportError:
+            print("[-] Error: web_ui.py not found or dependencies missing.")
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
