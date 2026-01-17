@@ -72,7 +72,7 @@
         main {
             flex: 1;
             padding: 20px;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
@@ -109,7 +109,7 @@
         /* Module Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -119,39 +119,105 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 20px;
-            text-align: center;
             cursor: pointer;
             transition: transform 0.2s, border-color 0.2s;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
             gap: 10px;
         }
-
+        
         .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent);
+            border-color: #555;
         }
 
-        .card i {
-            font-size: 2rem;
-            color: var(--text-dim);
-            margin-bottom: 5px;
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
         }
 
-        .card.active {
-            border-color: var(--accent);
-            background-color: rgba(0, 230, 118, 0.05);
-        }
-
-        .card.active i {
+        .card-header i {
+            font-size: 1.5rem;
             color: var(--accent);
         }
 
         .card-title {
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        
+        .card-content {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        .card.expanded .card-content {
+            display: flex;
+        }
+        
+        .card.expanded {
+            border-color: var(--accent);
+            grid-column: span 1; 
+        }
+        
+        /* Form elements inside cards */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+        
+        input[type="text"], select {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Action Buttons */
+        .btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        
+        .btn-stop {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
         }
 
         /* Terminal */
@@ -159,11 +225,9 @@
             background-color: #000;
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 0;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 300px;
+            height: 400px;
         }
 
         .terminal-header {
@@ -186,43 +250,30 @@
             white-space: pre-wrap;
         }
 
-        .stop-btn {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 15px;
+        /* Analysis Results Table */
+        .analysis-table {
             width: 100%;
-            border-radius: var(--radius);
-            font-weight: bold;
-            font-size: 1rem;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.8rem;
         }
-        
-        .stop-btn:active {
-            opacity: 0.9;
+        .analysis-table th, .analysis-table td {
+            border: 1px solid #444;
+            padding: 5px;
+            text-align: left;
         }
+        .analysis-table th { background: #222; color: var(--accent); }
 
-        @media (max-width: 600px) {
-            .grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="brand">
-        <i class="fas fa-microchip"></i> HackRF
+        <i class="fas fa-microchip"></i> HackRF // CONTROL
     </div>
     <div class="status">
-        <div class="status-dot"></div> ONLINE
+        <div class="status-dot"></div> SYSTEM ONLINE
     </div>
 </nav>
 
@@ -232,34 +283,98 @@
         <input type="number" class="freq-input" id="freq" value="315000000">
     </div>
 
-    <button class="stop-btn" onclick="stopTool()">
+    <button class="btn btn-stop" onclick="stopTool()">
         <i class="fas fa-stop-circle"></i> STOP ALL OPERATIONS
     </button>
 
     <div class="grid">
-        <div class="card" onclick="startTool('jammer')">
-            <i class="fas fa-broadcast-tower"></i>
-            <span class="card-title">JAMMER</span>
+        <!-- JAMMER CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-broadcast-tower"></i>
+                <div class="card-title">JAMMER</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <div class="form-group">
+                    <label class="form-label">Mode</label>
+                    <select id="jammer-mode">
+                        <option value="white">White Noise (Default)</option>
+                        <option value="sweep">Sweep Jam</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="startTool('jammer')">Start Jamming</button>
+            </div>
         </div>
-        <div class="card" onclick="startTool('replay')">
-            <i class="fas fa-redo"></i>
-            <span class="card-title">REPLAY</span>
+
+        <!-- REPLAY CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-redo"></i>
+                <div class="card-title">REPLAY ATTACK</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <div class="form-group">
+                    <label class="form-label">Capture File</label>
+                    <input type="text" id="replay-file" value="capture.iq" placeholder="capture.iq">
+                </div>
+                <button class="btn" onclick="startTool('replay')">Capture & Replay</button>
+            </div>
         </div>
-        <div class="card" onclick="startTool('salamandra')">
-            <i class="fas fa-bug"></i>
-            <span class="card-title">SALAMANDRA</span>
+
+        <!-- ANALYZER CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-wave-square"></i>
+                <div class="card-title">SIGNAL ANALYZER</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <div class="form-group">
+                    <label class="form-label">Input File</label>
+                    <input type="text" id="analyze-file" value="capture.iq">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Est. Baud Rate</label>
+                    <input type="number" id="analyze-baud" value="2000">
+                </div>
+                <button class="btn" onclick="startTool('analyze')">Analyze Signal</button>
+            </div>
         </div>
-        <div class="card" onclick="startTool('drone')">
-            <i class="fas fa-plane-arrival"></i>
-            <span class="card-title">DRONE DETECT</span>
+
+        <!-- SALAMANDRA CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-bug"></i>
+                <div class="card-title">SALAMANDRA</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <div class="form-group">
+                    <label class="form-label">Threshold (dBm)</label>
+                    <input type="number" value="-40">
+                </div>
+                <button class="btn" onclick="startTool('salamandra')">Scan for Bugs</button>
+            </div>
         </div>
-        <div class="card" onclick="startTool('rtl433')">
-            <i class="fas fa-satellite-dish"></i>
-            <span class="card-title">RTL_433</span>
+
+        <!-- DRONE CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-plane"></i>
+                <div class="card-title">DRONE DETECT</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <button class="btn" onclick="startTool('drone')">Monitor Airspace</button>
+            </div>
         </div>
-        <div class="card" onclick="toggleLogs()">
-            <i class="fas fa-terminal"></i>
-            <span class="card-title">TOGGLE LOGS</span>
+
+        <!-- RTL_433 CARD -->
+        <div class="card" onclick="toggleCard(this)">
+            <div class="card-header">
+                <i class="fas fa-satellite-dish"></i>
+                <div class="card-title">RTL_433 DECODER</div>
+            </div>
+            <div class="card-content" onclick="event.stopPropagation()">
+                <button class="btn" onclick="startTool('rtl433')">Decode Stream</button>
+            </div>
         </div>
     </div>
 
@@ -270,7 +385,7 @@
         </div>
         <div class="terminal-output" id="console-output">
             > System Ready.
-            > Waiting for command...
+            > Click a module to expand options.
         </div>
     </div>
 </main>
@@ -280,17 +395,31 @@
     const termStatus = document.getElementById('term-status');
     let pollInterval = null;
 
+    function toggleCard(card) {
+        // Collapse others
+        document.querySelectorAll('.card').forEach(c => {
+            if (c !== card) c.classList.remove('expanded');
+        });
+        card.classList.toggle('expanded');
+    }
+
     async function startTool(toolName) {
         const freq = document.getElementById('freq').value;
-        
+        let payload = { tool: toolName, freq: freq };
+
+        // Gather extra args
+        if (toolName === 'analyze') {
+            payload.file = document.getElementById('analyze-file').value;
+            payload.baud = document.getElementById('analyze-baud').value;
+        }
+
         log(`[CMD] Launching ${toolName}...`);
-        highlightCard(toolName);
         
         try {
             const res = await fetch('/api/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ tool: toolName, freq: freq })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             log(`[SYS] ${data.status}`);
@@ -301,7 +430,7 @@
                 termStatus.style.color = "#00e676";
             }
         } catch (e) {
-            log(`[ERR] Connection failed`);
+            log(`[ERR] Connection failed: ${e}`);
         }
     }
 
@@ -311,7 +440,6 @@
             log(`[CMD] STOP Signal Sent.`);
             termStatus.innerText = "STOPPED";
             termStatus.style.color = "#ff5252";
-            clearHighlights();
         } catch (e) {
             log(`[ERR] Failed to stop`);
         }
@@ -327,6 +455,8 @@
             const res = await fetch('/api/logs');
             const data = await res.json();
             if (data.logs) {
+                // If the log contains JSON-like structure (e.g. from analyzer), we could parse it here
+                // For now, just append text
                 consoleDiv.innerText = data.logs;
                 consoleDiv.scrollTop = consoleDiv.scrollHeight;
             }
@@ -336,18 +466,6 @@
     function log(msg) {
         consoleDiv.innerText += `\n${msg}`;
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    }
-
-    function highlightCard(toolName) {
-        // Simple visual feedback implementation could go here if we added IDs to cards
-    }
-
-    function clearHighlights() {
-        // Remove active class
-    }
-
-    function toggleLogs() {
-        // Implementation to maybe collapse terminal, current placeholder
     }
 </script>
 

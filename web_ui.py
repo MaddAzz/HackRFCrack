@@ -90,6 +90,10 @@ def start_tool():
         cmd = base_script + ["--drone"]
     elif tool == 'rtl433':
         cmd = base_script + ["--rtl433", "-F", str(freq)]
+    elif tool == 'analyze':
+        filename = data.get('file', 'capture.iq')
+        baud = data.get('baud', '2000')
+        cmd = base_script + ["--analyze", filename, "-B", str(baud), "-S", "2000000"]
     else:
         return jsonify({"error": "Unknown tool"}), 400
         
