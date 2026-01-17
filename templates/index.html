@@ -3,471 +3,605 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HackRF // PANEL</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>HACKRF // COMMAND</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-dim: #a0a0a0;
-            --accent: #00e676; /* Hacker Green */
-            --danger: #ff5252;
-            --border: #333;
-            --radius: 8px;
+            --bg-color: #050505;
+            --panel-bg: rgba(20, 20, 20, 0.95);
+            --sidebar-bg: #0a0a0a;
+            --accent: #00ff41;
+            --accent-dim: rgba(0, 255, 65, 0.2);
+            --text-main: #eee;
+            --text-muted: #666;
+            --border: #222;
+            --radius: 4px;
+            --danger: #ff2a2a;
+            --warn: #ffb700;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Navbar */
-        nav {
-            background-color: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 15px 20px;
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 80px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            z-index: 10;
+        }
+
+        .nav-item {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--bg-color);
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent-dim);
+        }
+
+        .brand-icon {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            animation: pulse 2s infinite;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* --- HEADER --- */
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .brand {
-            font-weight: 800;
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .sys-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item span { color: var(--accent); }
+
+        /* --- TABS --- */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active { display: block; }
+
+        /* --- GRID LAYOUT --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
             font-size: 1.2rem;
-            letter-spacing: 1px;
+            font-weight: 700;
             color: var(--accent);
+            margin-bottom: 15px;
             text-transform: uppercase;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: space-between;
         }
 
-        .status {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        /* --- MODULE CARDS --- */
+        .modules-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 5px var(--accent);
-        }
-
-        /* Main Content */
-        main {
-            flex: 1;
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Frequency Input */
-        .freq-panel {
-            background-color: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
+        .module-card {
+            background: rgba(255,255,255,0.02);
             border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .freq-label {
-            font-weight: bold;
-            margin-right: 15px;
-            color: var(--text-dim);
+        .module-card:hover {
+            border-color: var(--accent);
+            background: rgba(0, 255, 65, 0.05);
         }
 
-        .freq-input {
-            background: transparent;
-            border: none;
+        .module-card.active {
+            border-color: var(--accent);
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 20px var(--accent-dim);
+        }
+
+        .module-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+        }
+        
+        .module-card.active .module-icon { color: var(--accent); }
+
+        .module-title { font-weight: 700; letter-spacing: 1px; }
+
+        /* --- CONTROLS FORM --- */
+        .control-group { margin-bottom: 15px; }
+        .control-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input, select {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
             color: var(--accent);
-            font-family: 'Courier New', monospace;
-            font-size: 1.5rem;
-            flex: 1;
-            font-weight: bold;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            border-radius: 2px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #333;
             outline: none;
         }
-
-        /* Module Grid */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
             cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .card:hover {
-            border-color: #555;
+            border-radius: 0;
         }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-
-        .card-header i {
-            font-size: 1.5rem;
-            color: var(--accent);
-        }
-
-        .card-title {
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-        }
-        
-        .card-content {
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
-            border-top: 1px solid #333;
-            padding-top: 10px;
-        }
-
-        .card.expanded .card-content {
-            display: flex;
-        }
-        
-        .card.expanded {
-            border-color: var(--accent);
-            grid-column: span 1; 
-        }
-        
-        /* Form elements inside cards */
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .form-label {
-            font-size: 0.75rem;
-            color: #888;
-            text-transform: uppercase;
-        }
-        
-        input[type="text"], select {
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            padding: 8px;
-            border-radius: 4px;
-        }
-
-        /* Action Buttons */
+        /* --- BUTTONS --- */
         .btn {
             background: transparent;
             border: 1px solid var(--accent);
             color: var(--accent);
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 12px 20px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
             text-transform: uppercase;
-            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
             transition: all 0.2s;
-            text-align: center;
+            letter-spacing: 1px;
         }
 
-        .btn:hover {
-            background: var(--accent);
-            color: #000;
-        }
+        .btn:hover { background: var(--accent); color: #000; }
         
         .btn-stop {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 15px;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            align-items: center;
+            border-color: var(--danger);
+            color: var(--danger);
+            margin-top: 10px;
         }
+        .btn-stop:hover { background: var(--danger); color: white; }
 
-        /* Terminal */
-        .terminal-container {
-            background-color: #000;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            display: flex;
-            flex-direction: column;
-            height: 400px;
-        }
-
-        .terminal-header {
-            background-color: #222;
-            padding: 8px 15px;
+        /* --- TERMINAL --- */
+        .terminal {
+            background: #000;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
-            color: #888;
-            border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .terminal-output {
+            color: #ccc;
             padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            color: #ddd;
+            border: 1px solid var(--border);
+            height: 100%;
             overflow-y: auto;
-            flex: 1;
             white-space: pre-wrap;
         }
 
-        /* Analysis Results Table */
-        .analysis-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* --- FILE MANAGER --- */
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #222;
+        }
+        .file-item:hover { background: rgba(255,255,255,0.05); }
+        .file-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        .file-actions i { 
+            margin-left: 10px; 
+            cursor: pointer; 
+            color: var(--text-muted);
+        }
+        .file-actions i:hover { color: var(--accent); }
+
+        /* --- UTILS --- */
+        .hidden { display: none; }
+        
+        @keyframes pulse {
+            0% { text-shadow: 0 0 5px var(--accent-dim); }
+            50% { text-shadow: 0 0 20px var(--accent-dim); }
+            100% { text-shadow: 0 0 5px var(--accent-dim); }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- IMG PREVIEW --- */
+        #img-preview {
+            max-width: 100%;
+            border: 1px solid var(--border);
             margin-top: 10px;
-            font-size: 0.8rem;
         }
-        .analysis-table th, .analysis-table td {
-            border: 1px solid #444;
-            padding: 5px;
-            text-align: left;
-        }
-        .analysis-table th { background: #222; color: var(--accent); }
 
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="brand">
-        <i class="fas fa-microchip"></i> HackRF // CONTROL
-    </div>
-    <div class="status">
-        <div class="status-dot"></div> SYSTEM ONLINE
-    </div>
-</nav>
-
-<main>
-    <div class="freq-panel">
-        <span class="freq-label">FREQ (Hz):</span>
-        <input type="number" class="freq-input" id="freq" value="315000000">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="brand-icon"><i class="fas fa-satellite-dish"></i></div>
+        <div class="nav-item active" onclick="switchTab('dashboard')" title="Dashboard"><i class="fas fa-th-large"></i></div>
+        <div class="nav-item" onclick="switchTab('files')" title="Files & Analysis"><i class="fas fa-folder-open"></i></div>
+        <div class="nav-item" onclick="switchTab('settings')" title="Radio Settings"><i class="fas fa-sliders-h"></i></div>
     </div>
 
-    <button class="btn btn-stop" onclick="stopTool()">
-        <i class="fas fa-stop-circle"></i> STOP ALL OPERATIONS
-    </button>
-
-    <div class="grid">
-        <!-- JAMMER CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-broadcast-tower"></i>
-                <div class="card-title">JAMMER</div>
+    <!-- MAIN -->
+    <div class="main-content">
+        
+        <header>
+            <div class="page-title" id="page-title">COMMAND CENTER</div>
+            <div class="sys-status">
+                <div class="status-item">DEVICE: <span>HACKRF ONE</span></div>
+                <div class="status-item">STATUS: <span id="conn-status">READY</span></div>
             </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <div class="form-group">
-                    <label class="form-label">Mode</label>
-                    <select id="jammer-mode">
-                        <option value="white">White Noise (Default)</option>
-                        <option value="sweep">Sweep Jam</option>
+        </header>
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard-grid">
+                
+                <!-- LEFT COL: MODULES -->
+                <div class="panel">
+                    <div class="panel-header">ACTIVE MODULES</div>
+                    <div class="modules-container">
+                        <div class="module-card" onclick="selectModule('jammer')">
+                            <i class="fas fa-broadcast-tower module-icon"></i>
+                            <div class="module-title">JAMMER</div>
+                        </div>
+                        <div class="module-card" onclick="selectModule('replay')">
+                            <i class="fas fa-redo module-icon"></i>
+                            <div class="module-title">REPLAY</div>
+                        </div>
+                        <div class="module-card" onclick="selectModule('analyze')">
+                            <i class="fas fa-wave-square module-icon"></i>
+                            <div class="module-title">ANALYZER</div>
+                        </div>
+                        <div class="module-card" onclick="selectModule('salamandra')">
+                            <i class="fas fa-bug module-icon"></i>
+                            <div class="module-title">SALAMANDRA</div>
+                        </div>
+                        <div class="module-card" onclick="selectModule('drone')">
+                            <i class="fas fa-plane module-icon"></i>
+                            <div class="module-title">DRONE</div>
+                        </div>
+                        <div class="module-card" onclick="selectModule('rtl433')">
+                            <i class="fas fa-satellite module-icon"></i>
+                            <div class="module-title">RTL_433</div>
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC CONTROLS -->
+                    <div id="controls-area" style="margin-top: 30px; border-top: 1px solid #222; padding-top: 20px;">
+                        <div class="panel-header">CONFIGURATION</div>
+                        
+                        <div class="control-group">
+                            <label class="control-label">TARGET FREQUENCY (Hz)</label>
+                            <input type="number" id="freq" value="315000000">
+                        </div>
+
+                        <!-- Specific Inputs depending on module -->
+                        <div id="extra-controls"></div>
+
+                        <div style="margin-top: 20px;">
+                            <button class="btn" onclick="startCurrentTool()">INITIATE SEQUENCE</button>
+                            <button class="btn btn-stop" onclick="stopTool()">ABORT OPERATION</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COL: TERMINAL -->
+                <div class="panel">
+                    <div class="panel-header">SYSTEM LOGS</div>
+                    <div class="terminal" id="console-output">
+                        > System Initialized...
+                        > Waiting for input...
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FILES TAB -->
+        <div id="files" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span>DATA STORAGE</span>
+                        <i class="fas fa-sync" style="cursor: pointer;" onclick="loadFiles()"></i>
+                    </div>
+                    <ul class="file-list" id="file-list-ul">
+                        <!-- Populated via JS -->
+                    </ul>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">PREVIEW / DETAILS</div>
+                    <div id="file-preview-area" style="text-align: center; color: #666;">
+                        Select a file to view details.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="settings" class="tab-content">
+            <div class="panel" style="max-width: 600px; margin: 0 auto;">
+                <div class="panel-header">RADIO CONFIGURATION</div>
+                
+                <div class="control-group">
+                    <label class="control-label">SAMPLE RATE</label>
+                    <select id="global-sample-rate">
+                        <option value="2000000">2 MSPS (Default)</option>
+                        <option value="4000000">4 MSPS</option>
+                        <option value="8000000">8 MSPS</option>
+                        <option value="10000000">10 MSPS</option>
+                        <option value="20000000">20 MSPS (Max)</option>
                     </select>
                 </div>
-                <button class="btn" onclick="startTool('jammer')">Start Jamming</button>
-            </div>
-        </div>
 
-        <!-- REPLAY CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-redo"></i>
-                <div class="card-title">REPLAY ATTACK</div>
-            </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <div class="form-group">
-                    <label class="form-label">Capture File</label>
-                    <input type="text" id="replay-file" value="capture.iq" placeholder="capture.iq">
+                <div class="control-group">
+                    <label class="control-label">LNA GAIN (IF) - <span id="lna-val">16</span>dB</label>
+                    <input type="range" class="range-slider" min="0" max="40" step="8" value="16" oninput="document.getElementById('lna-val').innerText=this.value" id="global-lna">
                 </div>
-                <button class="btn" onclick="startTool('replay')">Capture & Replay</button>
-            </div>
-        </div>
 
-        <!-- ANALYZER CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-wave-square"></i>
-                <div class="card-title">SIGNAL ANALYZER</div>
-            </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <div class="form-group">
-                    <label class="form-label">Input File</label>
-                    <input type="text" id="analyze-file" value="capture.iq">
+                <div class="control-group">
+                    <label class="control-label">VGA GAIN (Baseband) - <span id="vga-val">20</span>dB</label>
+                    <input type="range" class="range-slider" min="0" max="62" step="2" value="20" oninput="document.getElementById('vga-val').innerText=this.value" id="global-vga">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Est. Baud Rate</label>
-                    <input type="number" id="analyze-baud" value="2000">
+                
+                <div class="control-group">
+                     <label class="control-label" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="global-amp" style="width: auto;"> ENABLE RF AMPLIFIER (+14dB)
+                     </label>
                 </div>
-                <button class="btn" onclick="startTool('analyze')">Analyze Signal</button>
-            </div>
-        </div>
 
-        <!-- SALAMANDRA CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-bug"></i>
-                <div class="card-title">SALAMANDRA</div>
-            </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <div class="form-group">
-                    <label class="form-label">Threshold (dBm)</label>
-                    <input type="number" value="-40">
+                <div style="margin-top: 20px; color: #666; font-size: 0.8rem;">
+                    * These settings apply to Replay, Jammer, and Analyze modes.
                 </div>
-                <button class="btn" onclick="startTool('salamandra')">Scan for Bugs</button>
             </div>
         </div>
 
-        <!-- DRONE CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-plane"></i>
-                <div class="card-title">DRONE DETECT</div>
-            </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <button class="btn" onclick="startTool('drone')">Monitor Airspace</button>
-            </div>
-        </div>
-
-        <!-- RTL_433 CARD -->
-        <div class="card" onclick="toggleCard(this)">
-            <div class="card-header">
-                <i class="fas fa-satellite-dish"></i>
-                <div class="card-title">RTL_433 DECODER</div>
-            </div>
-            <div class="card-content" onclick="event.stopPropagation()">
-                <button class="btn" onclick="startTool('rtl433')">Decode Stream</button>
-            </div>
-        </div>
     </div>
 
-    <div class="terminal-container">
-        <div class="terminal-header">
-            <span>TERMINAL OUTPUT</span>
-            <span id="term-status">IDLE</span>
-        </div>
-        <div class="terminal-output" id="console-output">
-            > System Ready.
-            > Click a module to expand options.
-        </div>
-    </div>
-</main>
+    <script>
+        let currentModule = 'jammer';
+        let pollInterval = null;
+        const consoleDiv = document.getElementById('console-output');
 
-<script>
-    const consoleDiv = document.getElementById('console-output');
-    const termStatus = document.getElementById('term-status');
-    let pollInterval = null;
-
-    function toggleCard(card) {
-        // Collapse others
-        document.querySelectorAll('.card').forEach(c => {
-            if (c !== card) c.classList.remove('expanded');
-        });
-        card.classList.toggle('expanded');
-    }
-
-    async function startTool(toolName) {
-        const freq = document.getElementById('freq').value;
-        let payload = { tool: toolName, freq: freq };
-
-        // Gather extra args
-        if (toolName === 'analyze') {
-            payload.file = document.getElementById('analyze-file').value;
-            payload.baud = document.getElementById('analyze-baud').value;
-        }
-
-        log(`[CMD] Launching ${toolName}...`);
-        
-        try {
-            const res = await fetch('/api/start', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            log(`[SYS] ${data.status}`);
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
             
-            if (data.status === "Started") {
-                startPolling();
-                termStatus.innerText = "RUNNING";
-                termStatus.style.color = "#00e676";
-            }
-        } catch (e) {
-            log(`[ERR] Connection failed: ${e}`);
-        }
-    }
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // simple active state logic
+            const idx = ['dashboard', 'files', 'settings'].indexOf(tabId) + 1;
+            document.querySelector(`.nav-item:nth-child(${idx+1})`).classList.add('active');
 
-    async function stopTool() {
-        try {
+            if (tabId === 'files') loadFiles();
+        }
+
+        function selectModule(mod) {
+            currentModule = mod;
+            document.querySelectorAll('.module-card').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            updateControls();
+        }
+
+        function updateControls() {
+            const container = document.getElementById('extra-controls');
+            container.innerHTML = '';
+            
+            if (currentModule === 'analyze') {
+                container.innerHTML = `
+                    <div class="control-group">
+                        <label class="control-label">INPUT FILE</label>
+                        <input type="text" id="analyze-file" value="capture.iq">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">EST. BAUD RATE</label>
+                        <input type="number" id="analyze-baud" value="2000">
+                    </div>
+                `;
+            } else if (currentModule === 'replay') {
+                 // Replay doesn't need file input for simple mode unless we add it
+            }
+        }
+
+        async function startCurrentTool() {
+            const freq = document.getElementById('freq').value;
+            const sampleRate = document.getElementById('global-sample-rate').value;
+            const lna = document.getElementById('global-lna').value;
+            const vga = document.getElementById('global-vga').value;
+            const amp = document.getElementById('global-amp').checked;
+
+            let payload = { 
+                tool: currentModule, 
+                freq: freq,
+                sample_rate: sampleRate,
+                lna: lna,
+                vga: vga,
+                amp: amp
+            };
+
+            if (currentModule === 'analyze') {
+                payload.file = document.getElementById('analyze-file').value;
+                payload.baud = document.getElementById('analyze-baud').value;
+            }
+
+            log(`[CMD] Launching ${currentModule.toUpperCase()}...`);
+            
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                log(`[SYS] ${data.status}`);
+                
+                if (data.status === "Started") {
+                    startPolling();
+                    document.getElementById('conn-status').innerText = "BUSY";
+                    document.getElementById('conn-status').style.color = "var(--warn)";
+                }
+            } catch (e) {
+                log(`[ERR] Failed: ${e}`);
+            }
+        }
+
+        async function stopTool() {
             await fetch('/api/stop', { method: 'POST' });
-            log(`[CMD] STOP Signal Sent.`);
-            termStatus.innerText = "STOPPED";
-            termStatus.style.color = "#ff5252";
-        } catch (e) {
-            log(`[ERR] Failed to stop`);
+            log(`[CMD] Stopped.`);
+            document.getElementById('conn-status').innerText = "READY";
+            document.getElementById('conn-status').style.color = "var(--accent)";
         }
-    }
 
-    function startPolling() {
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(fetchLogs, 1000);
-    }
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(async () => {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+                if(data.logs) {
+                    consoleDiv.innerText = data.logs;
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                }
+            }, 1000);
+        }
 
-    async function fetchLogs() {
-        try {
-            const res = await fetch('/api/logs');
+        function log(msg) {
+            consoleDiv.innerText += `\n${msg}`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        async function loadFiles() {
+            const res = await fetch('/api/files');
             const data = await res.json();
-            if (data.logs) {
-                // If the log contains JSON-like structure (e.g. from analyzer), we could parse it here
-                // For now, just append text
-                consoleDiv.innerText = data.logs;
-                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            const list = document.getElementById('file-list-ul');
+            list.innerHTML = '';
+            
+            data.files.forEach(f => {
+                let icon = 'fa-file';
+                if (f.endsWith('.iq')) icon = 'fa-wave-square';
+                if (f.endsWith('.png')) icon = 'fa-image';
+                if (f.endsWith('.json')) icon = 'fa-code';
+                
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <span class="file-name"><i class="fas ${icon}"></i> ${f}</span>
+                    <div class="file-actions">
+                        <i class="fas fa-eye" onclick="viewFile('${f}')" title="View"></i>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function viewFile(filename) {
+            const preview = document.getElementById('file-preview-area');
+            if (filename.endsWith('.png')) {
+                preview.innerHTML = `<img src="/files/${filename}" id="img-preview">`;
+            } else if (filename.endsWith('.json')) {
+                const res = await fetch(`/files/${filename}`);
+                const json = await res.json();
+                preview.innerHTML = `<pre style="text-align:left; background:#111; padding:10px; overflow:auto;">${JSON.stringify(json, null, 2)}</pre>`;
+            } else {
+                preview.innerHTML = `<p>Binary file preview not supported yet.</p>`;
             }
-        } catch (e) { }
-    }
+        }
 
-    function log(msg) {
-        consoleDiv.innerText += `\n${msg}`;
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    }
-</script>
-
+        // Init
+        selectModule('jammer');
+    </script>
 </body>
 </html>

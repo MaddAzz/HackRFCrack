@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory
 import subprocess
 import os
 import sys
 import threading
-import time
-import signal
+import glob
 
 app = Flask(__name__)
 
 # Global process handle
 current_process = None
 output_buffer = []
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def run_process(command):
     global current_process, output_buffer
@@ -30,7 +31,7 @@ def run_process(command):
                 stderr=subprocess.STDOUT, 
                 text=True, 
                 bufsize=1,
-                cwd=os.path.dirname(os.path.abspath(__file__))
+                cwd=BASE_DIR
             )
             
             for line in iter(current_process.stdout.readline, ''):
@@ -52,6 +53,20 @@ def run_process(command):
 def index():
     return render_template('index.html')
 
+@app.route('/files/<path:filename>')
+def serve_file(filename):
+    return send_from_directory(BASE_DIR, filename)
+
+@app.route('/api/files')
+def list_files():
+    # List .iq, .png, .json files
+    patterns = ["*.iq", "*.png", "*.json"]
+    files = []
+    for pattern in patterns:
+        for f in glob.glob(os.path.join(BASE_DIR, pattern)):
+            files.append(os.path.basename(f))
+    return jsonify({"files": sorted(files)})
+
 @app.route('/api/stop', methods=['POST'])
 def stop_process():
     global current_process
@@ -63,8 +78,8 @@ def stop_process():
 @app.route('/api/logs')
 def get_logs():
     global output_buffer
-    # Return last N lines to avoid huge payloads, or implement cursor
-    return jsonify({"logs": "".join(output_buffer[-50:])})
+    # Return last 100 lines
+    return jsonify({"logs": "".join(output_buffer[-100:])})
 
 @app.route('/api/start', methods=['POST'])
 def start_tool():
@@ -72,28 +87,37 @@ def start_tool():
     tool = data.get('tool')
     freq = data.get('freq', '315000000')
     
-    cmd = []
+    # New Advanced Params
+    sample_rate = data.get('sample_rate', '2000000')
+    lna = data.get('lna', '16')
+    vga = data.get('vga', '20')
+    amp = data.get('amp', False)
     
-    # Base command: python3 HackRFCrack.py ...
+    cmd = []
     base_script = [sys.executable, "HackRFCrack.py"]
     
+    # Common Args
+    common_args = ["-F", str(freq), "-S", str(sample_rate)]
+    gain_args = ["-l", str(lna), "-g", str(vga)]
+    if amp:
+        gain_args.append("-p")
+
     if tool == 'jammer':
-        cmd = base_script + ["--jammer", "-F", str(freq)]
+        cmd = base_script + ["--jammer"] + common_args
     elif tool == 'replay':
-        # Replay in Web UI is tricky because of input(). 
-        # For now, we'll just support capture or fixed replay if we modify the script.
-        # Simplest: Just run capture mode.
-        cmd = base_script + ["--instant_replay", "-F", str(freq)]
+        # Replay mode with Gain Control
+        cmd = base_script + ["--instant_replay"] + common_args + gain_args
     elif tool == 'salamandra':
         cmd = base_script + ["--salamandra"]
     elif tool == 'drone':
         cmd = base_script + ["--drone"]
     elif tool == 'rtl433':
-        cmd = base_script + ["--rtl433", "-F", str(freq)]
+        cmd = base_script + ["--rtl433"] + common_args
     elif tool == 'analyze':
         filename = data.get('file', 'capture.iq')
         baud = data.get('baud', '2000')
-        cmd = base_script + ["--analyze", filename, "-B", str(baud), "-S", "2000000"]
+        # Analyze doesn't need frequency/gain, just file/sample_rate/baud
+        cmd = base_script + ["--analyze", filename, "-B", str(baud), "-S", str(sample_rate)]
     else:
         return jsonify({"error": "Unknown tool"}), 400
         
