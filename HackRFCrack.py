@@ -226,12 +226,24 @@ parser.add_argument("-a", "--analyze", type=str, metavar="FILE", help="Analyze a
 parser.add_argument("-F", "--frequency", type=int, default=315000000, help="Frequency in Hz (default: 315000000)")
 parser.add_argument("-S", "--sample_rate", type=int, default=2000000, help="Sample Rate (default: 2M)")
 parser.add_argument("-B", "--baud_rate", type=int, default=2000, help="Baud/Bit Rate for analysis (default: 2000)")
+parser.add_argument("--salamandra", action='store_true', help="Launch Salamandra Spy Bug Detector")
+parser.add_argument("--drone", action='store_true', help="Launch Drone Detector")
 
 # Ignored/Unsupported args from original (kept for compatibility if user copies command)
 parser.add_argument("-r", "--rolling_code", action='store_true', help="[NOT SUPPORTED] Rolling Code")
 parser.add_argument("-M", "--modulation_type", help="[NOT SUPPORTED] Modulation Type")
 
 args = parser.parse_args()
+
+if args.salamandra:
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extra_tools/SalamandraHackRF.py")
+    subprocess.run([sys.executable, script_path, "-m"])
+    sys.exit(0)
+
+if args.drone:
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extra_tools/DroneDetectHackRF.py")
+    subprocess.run([sys.executable, script_path])
+    sys.exit(0)
 
 if args.rolling_code:
     print("[-] Rolling Code attacks require signal demodulation which is not supported in this raw HackRF wrapper.")
